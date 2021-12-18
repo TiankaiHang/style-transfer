@@ -1,0 +1,14 @@
+DATA:
+  DATASET: "MSCOCO"
+  DATA_PATH: "/data/tiankai/datasets/MSCOCO/train2014"
+  BATCH_SIZE: 4
+
+TRAIN:
+  TOTAL_ITERS: 500000
+  OPTIMIZER:
+    TYPE: "Adam"
+    BASE_LR: 0.001
+
+STYLE_IMG: "examples/style/la_muse.jpg"
+OUTPUT_DIR: "/data/tiankai/style-transfer-exp"
+EXP_NAME: "la_muse_lr1e-3"

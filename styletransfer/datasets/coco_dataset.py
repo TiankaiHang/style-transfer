@@ -13,6 +13,10 @@ try:
 except ImportError:
     BICUBIC = Image.BICUBIC
 
+# ref: https://github.com/eriklindernoren/PyTorch-YOLOv3/issues/162
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 def _convert_image_to_rgb(image):
     return image.convert("RGB")
 
@@ -24,7 +28,7 @@ def _normalize(x):
 
 def _transform(n_px):
     return Compose([
-        RandomResizedCrop(n_px),
+        RandomResizedCrop(n_px, scale=(0.8, 1)),
         _convert_image_to_rgb,
         ToTensor(),
         Normalize((0.485, 0.456, 0.406), 

@@ -4,11 +4,12 @@ DATA:
   BATCH_SIZE: 4
 
 TRAIN:
-  TOTAL_ITERS: 500000
+  TOTAL_ITERS: 400000
   OPTIMIZER:
     TYPE: "Adam"
-    BASE_LR: 0.001
+    BASE_LR: 0.0001
 
 STYLE_IMG: "examples/style/la_muse.jpg"
 OUTPUT_DIR: "/data/tiankai/style-transfer-exp"
-EXP_NAME: "la_muse_lr1e-3"
+EXP_NAME: "la_muse_lr1e-4"
+PRINT_FREQ: 1000

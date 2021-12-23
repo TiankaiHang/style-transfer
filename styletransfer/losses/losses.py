@@ -8,7 +8,6 @@ class PerceptualLoss(torch.nn.Module):
 
         self.backbone = vgg16(pretrained=True).features
         
-        
         """
         Sequential(
             (0): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
@@ -45,9 +44,8 @@ class PerceptualLoss(torch.nn.Module):
         )
         """
 
-    def extract_features(self, x):
+    def extract_features(self, x, layer_inds=[3, 8, 15, 22]):
         """relu1_2, relu2_2, relu3_3, and relu4_3"""
-        layer_inds = [3, 8, 15, 22]
         feat_list = []
         for idx, layer in enumerate(self.backbone):
             x = layer(x)
@@ -68,21 +66,22 @@ class PerceptualLoss(torch.nn.Module):
         G_x = self.get_gram_matrix(x)
         G_y = self.get_gram_matrix(y)
 
-        return torch.norm(G_x - G_y, p="fro")
+        # return torch.norm(G_x - G_y, p="fro")
+        return F.mse_loss(G_x, G_y)
 
     def forward(self, y_s, y_hat, y_c):
         feat_list_y_s = self.extract_features(y_s)
         feat_list_y_hat = self.extract_features(y_hat)
-        feat_list_y_c = self.extract_features(y_c)
+        feat_list_y_c = self.extract_features(y_c, layer_inds=[8])
 
-        style_loss = 0
+        style_loss = 0.0
 
         # style loss
         for feat_y_s, feat_y_hat in zip(feat_list_y_s, feat_list_y_hat):
             style_loss += self.style_reconstruct_loss(feat_y_s, feat_y_hat)
 
         # feat loss
-        feat_loss = self.feat_reconstruct_loss(feat_list_y_c[2], feat_list_y_hat[2])
+        feat_loss = self.feat_reconstruct_loss(feat_list_y_c[0], feat_list_y_hat[1])
 
         return style_loss, feat_loss
 

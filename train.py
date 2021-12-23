@@ -29,6 +29,11 @@ def sample_data(loader):
         for batch in loader:
             yield batch
 
+def _denormailize_tensor(x, mean, std):
+    for i in range(3):
+        x[:, i, :, :] *=  std[i]
+        x[:, i, :, :] += mean[i]
+
 def _print_log(batch_time, data_time, loss_dict, current_iter, total_iters):
     _ret_string = f"[Iter {current_iter:06d}|{total_iters:06d}] "
     eta = (total_iters - current_iter) * batch_time
@@ -38,7 +43,7 @@ def _print_log(batch_time, data_time, loss_dict, current_iter, total_iters):
     _ret_string += f"eta: {d} day:{int(h):02d}:{int(m):02d}:{int(s):02d} "
     _ret_string += f"batch time: {batch_time:.03f} data time: {data_time:.03f} "
     for key in loss_dict.keys():
-        _ret_string += f"{key}: {loss_dict[key]} "
+        _ret_string += f"{key}: {loss_dict[key]:.03f} "
     
     return _ret_string
 
@@ -73,7 +78,7 @@ def parse_option():
     # distributed training
     parser.add_argument("--local_rank", type=int, required=True, help='local rank for DistributedDataParallel')
 
-    args, unparsed = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     config = get_config(args)
 
@@ -127,10 +132,17 @@ def main(config):
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[dist.get_rank()])
     perceptual_loss_fn = PerceptualLoss().cuda().eval()
 
+    for param in perceptual_loss_fn.parameters():
+        param.requires_grad = False
+
     optimizer = torch.optim.Adam([
         {'params': filter(lambda p: p.requires_grad, model.parameters()), 
          'lr': config.TRAIN.OPTIMIZER.BASE_LR},
     ])
+
+    lambda_style = 1e10
+    lambda_feat  = 1e5
+    lambda_l2    = 0
 
     _data_start = time.time()
     for y_c, y_s in train_loader:
@@ -143,12 +155,14 @@ def main(config):
         style_loss, feat_loss = perceptual_loss_fn(y_s, y_hat, y_c)
         l2_loss = torch.nn.functional.mse_loss(y_hat, y_c)
 
-        loss = style_loss + feat_loss + l2_loss
+        loss = style_loss * lambda_style \
+             + feat_loss * lambda_feat \
+             + l2_loss * lambda_l2
 
         loss_dict = {
-            'style_loss': style_loss.cpu().data,
-            'feat_loss': feat_loss.cpu().data,
-            'l2_loss': l2_loss.cpu().data,
+            'style_loss': style_loss.cpu().data * lambda_style,
+            'feat_loss': feat_loss.cpu().data * lambda_feat,
+            'l2_loss': l2_loss.cpu().data * lambda_l2,
             'loss': loss.cpu().data,
         }
 
@@ -157,14 +171,20 @@ def main(config):
         optimizer.step()
 
         batch_time_meter.update(time.time() - _data_start)
-        if _iter % 100 == 0:
+        if _iter % config.PRINT_FREQ == 0:
             _ret_string = _print_log(batch_time_meter.avg, data_time_meter.avg, \
                 loss_dict, _iter, config.TRAIN.TOTAL_ITERS)
-            save_image(y_hat, fp=os.path.join(config.OUTPUT_DIR, f"Iter_{_iter:06d}.png"))
+            _denormailize_tensor(
+                y_hat, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            save_image(
+                y_hat.clamp(0, 1), 
+                fp=os.path.join(config.OUTPUT_DIR, f"Iter_{_iter:06d}.png"),
+                normalize=True,
+                value_range=(0, 1))
             logger.info(_ret_string)
 
-        # if _iter > config.TRAIN.TOTAL_ITERS:
-        #     print(_iter)
+        if _iter > config.TRAIN.TOTAL_ITERS:
+            break
         
         _data_start = time.time()
 
@@ -188,7 +208,8 @@ if __name__ == '__main__':
     cudnn.benchmark = True
 
     # linear scale the learning rate according to total batch size, may not be optimal
-    linear_scaled_lr = config.TRAIN.OPTIMIZER.BASE_LR * config.DATA.BATCH_SIZE * dist.get_world_size() / 512.0
+    # linear_scaled_lr = config.TRAIN.OPTIMIZER.BASE_LR * config.DATA.BATCH_SIZE * dist.get_world_size() / 512.0
+    linear_scaled_lr = config.TRAIN.OPTIMIZER.BASE_LR
 
     # gradient accumulation also need to scale the learning rate
     if config.TRAIN.ACCUMULATION_STEPS > 1:

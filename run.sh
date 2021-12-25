@@ -1,4 +1,4 @@
-CONFIG=styletransfer_vgg16_la_muse
+CONFIG=styletransfer_vgg16_rain_princess
 GPUS=2
 
 python -m torch.distributed.launch --nproc_per_node $GPUS \

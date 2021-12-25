@@ -1,0 +1,15 @@
+DATA:
+  DATASET: "MSCOCO"
+  DATA_PATH: "/data/tiankai/datasets/MSCOCO/train2014"
+  BATCH_SIZE: 4
+
+TRAIN:
+  TOTAL_ITERS: 400000
+  OPTIMIZER:
+    TYPE: "Adam"
+    BASE_LR: 0.0001
+
+STYLE_IMG: "examples/style/rain_princess.jpg"
+OUTPUT_DIR: "/data/tiankai/style-transfer-exp"
+EXP_NAME: "rain_princess_lr1e-4"
+PRINT_FREQ: 1000

@@ -178,7 +178,7 @@ def main(config):
                 y_hat, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             save_image(
                 y_hat.clamp(0, 1), 
-                fp=os.path.join(config.OUTPUT_DIR, f"Iter_{_iter:06d}.png"),
+                fp=os.path.join(config.OUTPUT_DIR, f"Iter_{_iter:06d}_{global_rank}.png"),
                 normalize=True,
                 value_range=(0, 1))
             logger.info(_ret_string)

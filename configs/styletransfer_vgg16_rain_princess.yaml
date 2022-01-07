@@ -12,5 +12,5 @@ TRAIN:
 STYLE_IMG: "examples/style/rain_princess.jpg"
 OUTPUT_DIR: "/data/tiankai/style-transfer-exp"
 EXP_NAME: "rain_princess_lr1e-4"
-PRINT_FREQ: 200
-SAVE_FREQ: 200
+PRINT_FREQ: 1000
+SAVE_FREQ: 20000

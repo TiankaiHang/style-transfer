@@ -2,7 +2,10 @@
 Unofficial Implementation for perceptual losses for real-time style transfer and super-resolution
 
 ## To run
-`bash dist_train.sh`
+
+### Training
+
+`bash tools/dist_train.sh`
 
 `dist_train.sh` is as follows,
 ```
@@ -13,6 +16,10 @@ python -m torch.distributed.launch --nproc_per_node $GPUS \
     --master_port 12345 dist_train.py \
     --cfg configs/$CONFIG.yaml
 ```
+
+### Inference
+
+`bash tools/dist_inference.sh`
 
 ## Some results
 ![rain_princess](results/rain_princess_lr1e-4_iter4k.png)

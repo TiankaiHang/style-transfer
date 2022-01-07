@@ -55,6 +55,9 @@ class COCODataset(data.Dataset):
         self.style_path = style_path
 
     def __getitem__(self, index: int):
+
+        style_image = None
+
         img = Image.open(self.file_list[index])
         img = self.transform(img)
 
@@ -63,9 +66,11 @@ class COCODataset(data.Dataset):
                 f"Style Image {self.style_path} does not exist!"
             style_image = Image.open(self.style_path)
             style_image = self.transform(style_image)
-            return img, style_image
 
-        return img
+        return dict(
+            img=img,
+            style_image=style_image,
+            fp=self.file_list[index])
 
     def __len__(self) -> int:
         return len(self.file_list)

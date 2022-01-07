@@ -13,3 +13,4 @@ STYLE_IMG: "examples/style/la_muse.jpg"
 OUTPUT_DIR: "/data/tiankai/style-transfer-exp"
 EXP_NAME: "la_muse_lr1e-4"
 PRINT_FREQ: 1000
+SAVE_FREQ: 20000
